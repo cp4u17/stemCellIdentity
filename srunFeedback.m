@@ -18,20 +18,20 @@ close all
 %    limitations under the License.
 
 % parameters
-caseID = 'stable';
+caseID = 'unstable';
 
 switch caseID
     case 'stable'
         D = 3; ns = 1e3; K = 1; N = 2;
         r11 = 1; r12 = 1; r13 = 0;
-        lambda1 = @(n) 0.005 + 1.01693490899326./(K^N + (n/ns).^N);
         r31 = 0; r32 = 2; r33 = 0;
-        lambda3 = @(n) 0.005 + 1.00830770433338./(K^N + (n/ns).^N);
-        omega13 = @(n) 0.005 + 1.11565749164862./(K^N + (n/ns).^N);
-        omega23 = @(n) 0.005 + 1.85051188247684./(K^N + (n/ns).^N);
-        omega21 = @(n) 0.005 + 1.52006423017647*(n/ns).^N./(K^N + (n/ns).^N);
-        delta1 = @(n) 0.005 + 2.68009497394856*(n/ns).^N./(K^N + (n/ns).^N);
-        delta2 = @(n) 0.005 + 1.63684762952282*(n/ns).^N./(K^N + (n/ns).^N);
+        lambda1 = @(n) 0.005 + 1.02./(K^N + (n/ns).^N);
+        lambda3 = @(n) 0.005 + 1.01./(K^N + (n/ns).^N);
+        omega13 = @(n) 0.005 + 1.12./(K^N + (n/ns).^N);
+        omega23 = @(n) 0.005 + 1.85./(K^N + (n/ns).^N);
+        omega21 = @(n) 0.005 + 1.52*(n/ns).^N./(K^N + (n/ns).^N);
+        delta1 = @(n) 0.005 + 2.68*(n/ns).^N./(K^N + (n/ns).^N);
+        delta2 = @(n) 0.005 + 1.64*(n/ns).^N./(K^N + (n/ns).^N);
         % matrix A elements
         a11 = @(n) (r11-1)*lambda1(n) - omega13(n) - delta1(n);
         a22 = @(n) -omega21(n) -omega23(n) - delta2(n);
@@ -46,14 +46,13 @@ switch caseID
         % reference timescale
         alpha_ref = @(ns) min([lambda1(ns) lambda3(ns) omega13(ns) omega21(ns) omega23(ns) delta1(ns) delta2(ns)]);
     case 'unstable'
-        D = 2; ns = 1e3; K = 1; N = 2;
+        D = 2; ns = 1e3; K = 1; 
         r11 = 0.09; r12 = 0.11; r21 = 0.47; r22 = 0.53;
-        lambda1 = @(n) 0.1 + 0.68./(1 + (n/ns).^50);
-        lambda2 = @(n) 13.54./(1 + (n/ns).^2);
-        omega12 = @(n) 0.18./(1 + (n/ns).^5);
-        omega21 = @(n) 1 + 0.87*(n/ns)./(1 + (n/ns));
+        lambda1 = @(n) 0.1 + 0.68./(K^50+ (n/ns).^50);
+        lambda2 = @(n) 0.005 + 13.54./(K^2 + (n/ns).^2);
+        omega12 = @(n) 0.001 + 0.18./(K^5 + (n/ns).^5);
+        omega21 = @(n) 1 + 0.87*(n/ns)./(K + (n/ns));
         delta1 = @(n) 0.92*ones(size(n));
-        % delta2 = @(n) 0*(0.0001 + 0.002*(n/ns).^20./(1 + (n/ns).^20));
         % matrix A elements
         a11 = @(n) (2*r11-1)*lambda1(n) - omega12(n) - delta1(n);
         a22 = @(n) (2*r22-1)*lambda2(n) - omega21(n);
@@ -71,6 +70,7 @@ xs2 = fsolve(@(n) dynFnc([], n), ns*ones(D,1));
 xns = [zeros(D,1) xs2]; ns = sum(xns);
 tscale = 1/alpha_ref(ns(2));
 nscale = ns(2);
+muscale = alpha_ref(ns(2));
 
 % Jacobian (linearized dynamics)
 Tol = 1e-5;
@@ -95,7 +95,7 @@ for ii = 1:length(ns)
 end
 
 % Integration and plot of the dynamics
-Tspan = [0 5*tscale];
+Tspan = [0 4*tscale];
 % x0 = [xns(:,1) xns(:,2)*[0.8 1 1.2]];
 % xleg = {'N_a(0) = 0', 'N_a(0) = 0.8N_a^*', 'N_a(0) = N_a^*', 'N_a(0) = 1.2N_a^*'};
 x0 = [xns(:,2)*[0.8 1.2 1]];
@@ -107,7 +107,7 @@ hdyn = figure; setFigureProp(hdyn); hold on; grid on
 xlabel('Time $[1/\alpha_{min}]$'); ylabel('$N_a/N_a^*$')
 % plot(Tspan/tscale, ns(2)/nscale*[1 1], 'k--', 'linewidth', 3); % plot N*
 heig = figure; setFigureProp(heig); hold on; grid on
-xlabel('Time $[1/\alpha_{min}]$'); ylabel('$\mu_a$')
+xlabel('Time $[1/\alpha_{min}]$'); ylabel('$\mu_a [\alpha_{min}]$')
 % phase plot
 if D == 2
     hdyn1 = figure; setFigureProp(hdyn1); hold on; grid on
@@ -129,19 +129,18 @@ for ii = 1:size(x0,2)
     for jj = 1:length(t)
         muA(jj) = eigFnc(sum(y(jj,:)));
     end
-    h2(ii) = plot(t/tscale, muA, 'linewidth',2, 'Color', xcol(ii,:));
+    h2(ii) = plot(t/tscale, muA/muscale, 'linewidth',2, 'Color', xcol(ii,:));
     if D == 2 % n1 VS n2
         figure(hdyn1)
         plot(y(:,1)/nscale, y(:,2)/nscale, 'linewidth',2, 'Color', xcol(ii,:));
     end
 end
 % set leged
-% figure(hdyn); legend(['N_a^*' xleg])
 figure(hdyn); set(gca, 'FontSize', 20)
 legend(h1([1 3 2]), xleg([1 3 2]), 'FontSize', 12)
 figure(heig); set(gca, 'FontSize', 20)
 legend(h2([1 3 2]), xleg([1 3 2]), 'FontSize', 12)
-% axis([0 5 -0.8 0.8])
+% axis([0 4 -0.8 0.8])
 if D == 2 
     figure(hdyn1); set(gca, 'FontSize', 10)
 end
