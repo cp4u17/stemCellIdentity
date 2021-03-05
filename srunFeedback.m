@@ -23,8 +23,8 @@ caseID = 'unstable';
 switch caseID
     case 'stable'
         D = 3; ns = 1e3; K = 1; N = 2;
-        r11 = 1; r12 = 1; r13 = 0;
-        r31 = 0; r32 = 2; r33 = 0;
+        r11 = 0.5; r12 = 0.5; r13 = 0;
+        r31 = 0; r32 = 1; r33 = 0;
         lambda1 = @(n) 0.005 + 1.02./(K^N + (n/ns).^N);
         lambda3 = @(n) 0.005 + 1.01./(K^N + (n/ns).^N);
         omega13 = @(n) 0.005 + 1.12./(K^N + (n/ns).^N);
@@ -33,15 +33,15 @@ switch caseID
         delta1 = @(n) 0.005 + 2.68*(n/ns).^N./(K^N + (n/ns).^N);
         delta2 = @(n) 0.005 + 1.64*(n/ns).^N./(K^N + (n/ns).^N);
         % matrix A elements
-        a11 = @(n) (r11-1)*lambda1(n) - omega13(n) - delta1(n);
+        a11 = @(n) (2*r11-1)*lambda1(n) - omega13(n) - delta1(n);
         a22 = @(n) -omega21(n) -omega23(n) - delta2(n);
-        a33 = @(n) (r33-1)*lambda3(n) - omega21(n);
-        a21 = @(n) r12*lambda1(n);
-        a31 = @(n) r13*lambda1(n) + omega13(n);
+        a33 = @(n) (2*r33-1)*lambda3(n);
+        a21 = @(n) 2*r12*lambda1(n);
+        a31 = @(n) 2*r13*lambda1(n) + omega13(n);
         a12 = @(n) omega21(n);
         a32 = @(n) omega23(n);
-        a13 = @(n) r31*lambda3(n);
-        a23 = @(n) r32*lambda3(n);
+        a13 = @(n) 2*r31*lambda3(n);
+        a23 = @(n) 2*r32*lambda3(n);
         AFnc = @(n) [a11(n) a12(n) a13(n); a21(n) a22(n) a23(n); a31(n) a32(n) a33(n)];
         % reference timescale
         alpha_ref = @(ns) min([lambda1(ns) lambda3(ns) omega13(ns) omega21(ns) omega23(ns) delta1(ns) delta2(ns)]);
@@ -95,7 +95,7 @@ for ii = 1:length(ns)
 end
 
 % Integration and plot of the dynamics
-Tspan = [0 4*tscale];
+Tspan = [0 6*tscale];
 % x0 = [xns(:,1) xns(:,2)*[0.8 1 1.2]];
 % xleg = {'N_a(0) = 0', 'N_a(0) = 0.8N_a^*', 'N_a(0) = N_a^*', 'N_a(0) = 1.2N_a^*'};
 x0 = [xns(:,2)*[0.8 1.2 1]];
